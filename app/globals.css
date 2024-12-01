@@ -1,6 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import url('@scania/tegel/dist/tegel/tegel.css');
 
 @layer base {
   :root {
