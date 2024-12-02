@@ -13,6 +13,8 @@ export const signInAction = async () => {
 		provider: 'github',
 		options: {
 			redirectTo: `${origin}/auth/callback`,
+      scopes: 'read:user repo',
+      
 		},
 	});
 
