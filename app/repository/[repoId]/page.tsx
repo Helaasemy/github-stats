@@ -125,7 +125,6 @@ export default function RepositoryDetails() {
 
 				const commitsData = await commitsResponse.json();
 				setCommits(commitsData);
-				console.log(commitsData);
 			} catch (error) {
 				console.error('Error:', error);
 				setRepoDetails(null);
@@ -229,12 +228,12 @@ export default function RepositoryDetails() {
 			<div className="p-4 border rounded-lg shadow">
 				<h2 className="text-lg font-semibold mb-4">Recent Commits</h2>
 				<div className="mb-4 max-w-sm ">
-        <TdsTextField
-          label="Search Commits"
-          placeholder="Type to search..."
-          value={searchTerm}
-          onInput={(e) => setSearchTerm((e.target as HTMLInputElement).value)}
-        />
+					<TdsTextField
+						label="Search Commits"
+						placeholder="Type to search..."
+						value={searchTerm}
+						onInput={(e) => setSearchTerm((e.target as HTMLInputElement).value)}
+					/>
 				</div>
 				<div className="space-y-6 max-h-80 overflow-y-auto">
 					{filteredCommits.length > 0 ? (
