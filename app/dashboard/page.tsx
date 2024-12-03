@@ -4,7 +4,7 @@ import { Repos } from '@/components/ui/repos';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 
-export default async function ProtectedPage() {
+export default async function Dashboard() {
 	const supabase = await createClient();
 
 	// Get the authenticated user
@@ -27,7 +27,7 @@ export default async function ProtectedPage() {
 	});
 
 	if (!response.ok) {
-		console.log(githubToken);
+		
 
 		return (
 			<div>
@@ -38,7 +38,6 @@ export default async function ProtectedPage() {
 	}
 
 	const repositories = await response.json();
-	console.log('res', repositories);
 
 	return (
 		<div className="flex-1 w-full flex flex-col gap-12">
@@ -51,7 +50,7 @@ export default async function ProtectedPage() {
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 					{repositories.map((repo: any) => (
 						
-							<Repos key={repo.id} title={repo.name} type={repo.private} />
+							<Repos key={repo.id} title={repo.name} type={repo.private} repoId={repo.id}/>
 						
 					))}
 				</div>

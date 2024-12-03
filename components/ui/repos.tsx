@@ -1,11 +1,13 @@
 import clsx from 'clsx';
+import Link from 'next/link';
 
 interface StatsCardProps {
 	title: string;
 	type: boolean;
+	repoId: number;
 }
 
-const Repos = ({ title, type }: StatsCardProps) => {
+const Repos = ({ title, type, repoId }: StatsCardProps) => {
 	return (
 		<div
 			className={clsx(
@@ -18,6 +20,9 @@ const Repos = ({ title, type }: StatsCardProps) => {
 		>
 			<p className="tds-headline-06 tds-u-m1 whitespace-nowrap">{title}</p>
 			<h1 className="tds-headline-06 tds-u-m1">{type ? 'Privet' : 'Public'}</h1>
+			<Link href={`/repository/${repoId}`} className="text-blue-500 hover:underline">
+        View Details
+      </Link>
 		</div>
 	);
 };

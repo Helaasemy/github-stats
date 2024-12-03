@@ -32,7 +32,7 @@ const Stats = () => {
   return (
     <div>
       <h1>Next.js Chart Example</h1>
-      <Chart data={data} options={options} />
+      <Chart data={data} options={options} type={"bar"} />
     </div>
   );
 };
