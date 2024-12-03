@@ -1,9 +1,10 @@
 'use client'; // Ensures the component runs on the client-side
 
 import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { useEffect, useState } from 'react';
 import Chart from '@/components/ui/chart';
+import { TdsSpinner, TdsTextField } from '@scania/tegel-react';
 
 export default function RepositoryDetails() {
 	const { repoId } = useParams();
@@ -16,7 +17,9 @@ export default function RepositoryDetails() {
 		string,
 		number
 	> | null>(null);
+	const [commits, setCommits] = useState<any[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [searchTerm, setSearchTerm] = useState('');
 	const supabase = createClient();
 
 	useEffect(() => {
@@ -87,30 +90,48 @@ export default function RepositoryDetails() {
 				}
 
 				const commitActivityData = await commitActivityResponse.json();
+				// Safeguard against invalid or null data
+				if (Array.isArray(commitActivityData)) {
+					const monthlyActivity: Record<string, number> = {};
 
-				if (
-					!Array.isArray(commitActivityData) ||
-					commitActivityData.length === 0
-				) {
-					console.warn('Commit activity data is not available or empty');
+					commitActivityData.forEach((week) => {
+						const date = new Date(week.week * 1000);
+						const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+						monthlyActivity[month] = (monthlyActivity[month] || 0) + week.total;
+					});
+
+					setMonthlyCommitActivity(monthlyActivity);
+				} else {
+					console.warn(
+						'Commit Activity Data is not an array:',
+						commitActivityData
+					);
 					setMonthlyCommitActivity({});
-					return;
 				}
 
-				// Process weekly data into monthly data
-				const monthlyActivity: Record<string, number> = {};
-				commitActivityData.forEach((week: any) => {
-					const date = new Date(week.week * 1000); // Convert Unix timestamp to date
-					const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-					monthlyActivity[month] = (monthlyActivity[month] || 0) + week.total;
-				});
+				// Fetch commits
+				const commitsResponse = await fetch(
+					`https://api.github.com/repos/${repoData.owner.login}/${repoData.name}/commits`,
+					{
+						headers: {
+							Authorization: `Bearer ${githubToken}`,
+						},
+					}
+				);
 
-				setMonthlyCommitActivity(monthlyActivity);
+				if (!commitsResponse.ok) {
+					throw new Error(`Error fetching commits: ${commitsResponse.status}`);
+				}
+
+				const commitsData = await commitsResponse.json();
+				setCommits(commitsData);
+				console.log(commitsData);
 			} catch (error) {
 				console.error('Error:', error);
 				setRepoDetails(null);
 				setRepoLanguages(null);
 				setMonthlyCommitActivity(null);
+				setCommits([]);
 			} finally {
 				setLoading(false);
 			}
@@ -121,59 +142,59 @@ export default function RepositoryDetails() {
 		}
 	}, [repoId, supabase]);
 
-	if (loading) return <p>Loading...</p>;
+	if (loading) return <TdsSpinner variant="standard"></TdsSpinner>;
 	if (!repoDetails || !repoLanguages || !monthlyCommitActivity)
 		return <p>Failed to fetch repository data.</p>;
 
-	const monthlyLabels = Object.keys(monthlyCommitActivity); // Months as labels
-	const monthlyData = Object.values(monthlyCommitActivity); // Total commits per month
+	const monthlyLabels = Object.keys(monthlyCommitActivity);
+	const monthlyData = Object.values(monthlyCommitActivity);
+	const filteredCommits = commits.filter(
+		(commit) =>
+			commit.commit.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+			commit.author?.login?.toLowerCase().includes(searchTerm.toLowerCase())
+	);
 
 	return (
 		<div className="flex-1 w-full flex flex-col gap-12">
 			<h1 className="tds-headline-01">{repoDetails.name}</h1>
 			<div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
 				<div className="md:col-span-2 p-4 border rounded-lg shadow">
-					<Chart
-						type="bar"
-						data={{
-							labels: monthlyLabels, // Months (e.g., "Jan", "Feb", etc.)
-							datasets: [
-								{
-									label: 'Commits',
-									data: monthlyData, // Commit counts
-									backgroundColor: monthlyData.map(
-										(value) =>
-											value === Math.max(...monthlyData) ? '#2b70d3' : '#bacde8' // Darker blue for the max, lighter for others
-									),
-								},
-							],
-						}}
-						options={{
-							indexAxis: 'y', // Makes the bar chart horizontal
-							responsive: true,
-							plugins: {
-								legend: { display: false }, // Remove the legend for simplicity
-								title: { display: true, text: 'Monthly Commit Activity' }, // Add chart title
-							},
-							scales: {
-								x: {
-									beginAtZero: true,
-									title: {
-										display: true,
-										text: 'Commits', // Label for the X-axis
+					{monthlyCommitActivity && (
+						<Chart
+							type="bar"
+							data={{
+								labels: monthlyLabels,
+								datasets: [
+									{
+										label: 'Commits',
+										data: monthlyData,
+										backgroundColor: monthlyData.map((value) =>
+											value === Math.max(...monthlyData) ? '#2b70d3' : '#bacde8'
+										),
 									},
-									grid: { display: false },
+								],
+							}}
+							options={{
+								indexAxis: 'y',
+								responsive: true,
+								plugins: {
+									legend: { display: false },
+									title: { display: true, text: 'Monthly Commit Activity' },
 								},
-								y: {
-									title: {
-										display: true,
-										text: 'Months', // Label for the Y-axis
+								scales: {
+									x: {
+										beginAtZero: true,
+										title: { display: true, text: 'Commits' },
+										grid: { display: false },
 									},
-									grid: { display: false },
+									y: {
+										title: { display: true, text: 'Months' },
+										grid: { display: false },
+									},
 								},
-							},
-						}}
-					/>
+							}}
+						/>
+					)}
 				</div>
 				<div className="md:col-span-1 p-4 border rounded-lg shadow max-w-sm">
 					<Chart
@@ -203,6 +224,49 @@ export default function RepositoryDetails() {
 							},
 						}}
 					/>
+				</div>
+			</div>
+			<div className="p-4 border rounded-lg shadow">
+				<h2 className="text-lg font-semibold mb-4">Recent Commits</h2>
+				<div className="mb-4 max-w-sm ">
+        <TdsTextField
+          label="Search Commits"
+          placeholder="Type to search..."
+          value={searchTerm}
+          onInput={(e) => setSearchTerm(e.target.value)}
+        />
+				</div>
+				<div className="space-y-6 max-h-80 overflow-y-auto">
+					{filteredCommits.length > 0 ? (
+						filteredCommits.map((commit) => (
+							<a
+								key={commit.sha}
+								href={commit.html_url}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="flex gap-4 items-center group"
+							>
+								<img
+									src={commit.author?.avatar_url || '/default-avatar.png'}
+									alt={commit.author?.login || commit.commit?.author.name}
+									className="w-10 h-10 rounded-full object-cover"
+								/>
+								<div className="flex-1">
+									<p className="text-sm font-medium text-gray-900 group-hover:text-blue-600">
+										{commit.commit.message}
+									</p>
+									<p className="text-sm text-gray-500">
+										{commit.author?.login || commit.commit?.author.name} -{' '}
+										{new Date(commit.commit.author.date).toLocaleString()}
+									</p>
+								</div>
+							</a>
+						))
+					) : (
+						<p className="text-sm text-gray-500">
+							No commits match your search.
+						</p>
+					)}
 				</div>
 			</div>
 		</div>

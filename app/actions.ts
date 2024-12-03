@@ -25,7 +25,7 @@ export const signInAction = async () => {
 		return encodedRedirect('error', '/sign-in', error.message);
 	}
 
-	return redirect('/protected');
+	return redirect('/dashboard');
 };
 
 export const signOutAction = async () => {
