@@ -69,17 +69,6 @@ export default async function Dashboard() {
 					))}
 				</div>
 			</div>
-			<div className="flex flex-col gap-2 items-start">
-				{/* <Stats /> */}
-
-				<div></div>
-
-				{/* <div>
-					<pre className="text-xs font-mono p-3 rounded border max-h-32 overflow-auto">
-						{JSON.stringify(session?.user, null, 2)}
-					</pre>
-				</div> */}
-			</div>
 		</div>
 	);
 }
