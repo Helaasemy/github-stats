@@ -233,7 +233,7 @@ export default function RepositoryDetails() {
           label="Search Commits"
           placeholder="Type to search..."
           value={searchTerm}
-          onInput={(e) => setSearchTerm(e.target.value)}
+          onInput={(e) => setSearchTerm((e.target as HTMLInputElement).value)}
         />
 				</div>
 				<div className="space-y-6 max-h-80 overflow-y-auto">
