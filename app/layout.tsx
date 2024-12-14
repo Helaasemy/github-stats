@@ -31,7 +31,6 @@ export default function RootLayout({
 					<main className="min-h-screen flex">
 						<div className="flex-1 w-full flex flex-col gap-16 ">
 							<Nav />
-							<div>{defaultUrl}</div>
 							<div className="flex flex-col p-5">
 								{children}
 							</div>
